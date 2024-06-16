@@ -2,4 +2,3 @@ streamlit                 >=1.25.0
 streamlit-chat            >=0.1.1
 python-dotenv             >=1.0.0
 elasticsearch             >= 8.10.0
-webbrowser                >= 0.0.0
