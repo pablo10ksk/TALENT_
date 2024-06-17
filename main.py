@@ -45,7 +45,7 @@ def ask_mistral(prompt):
                     "content": f"{prompt}",
                 }
             ],
-            "temperature": 1,
+            "temperature": 0,
             "top_p": 1,
             "max_tokens": 500,
             "stream": False,
@@ -84,6 +84,33 @@ def super_result_algorithm(prompt):
 
 def openurl(textdata):
     webbrowser.open_new_tab(url)
+
+
+def create_es_query_KNN(strings):
+    query = {
+        "query": {
+            "bool": {
+                "must": [
+                    {"query_string": {"query": " ".join(strings), "default_field": "*"}}
+                ]
+            }
+        },
+        "knn": {
+            "field": "ml.inference.outmsgvector_.predicted_value",
+            "k": 10,
+            "num_candidates": 100,
+            "query_vector_builder": {
+                "text_embedding": {
+                    "model_id": ".multilingual-e5-small_linux-x86_64",
+                    "model_text": " ".join(strings),
+                }
+            },
+        },
+        "rank": {"rrf": {}},
+        "size": 5,
+    }
+
+    return query
 
 
 def create_es_query(strings):
