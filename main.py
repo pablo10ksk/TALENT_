@@ -114,29 +114,31 @@ def create_es_query_KNN(strings):
 
 
 def create_es_query(strings):
+    should_queries = []
+    must_queries = []
+    for string in strings:
+        fuzzy_query = {"fuzzy": {"titulo": {"value": string, "fuzziness": "AUTO"}}}
+    if re.search(r"\bO\b", string):
+        should_queries.append(fuzzy_query)
+    elif re.search(r"\bY\b", string):
+        must_queries.append(fuzzy_query)
+    else:
+        should_queries.append(
+            fuzzy_query
+        )  # Por defecto, agregamos a should si no hay "O" ni "Y"
+
     query = {
-        "query": {
-            "bool": {
-                "must": [
-                    {"query_string": {"query": " ".join(strings), "default_field": "*"}}
-                ]
+        "query": {"bool": {"must": must_queries, "should": should_queries}},
+        "suggest": {
+            "test_one": {
+                "text": " ".join(
+                    strings
+                ),  # Combinamos todas las strings para la sugerencia
+                "term": {"field": "titulo"},
             }
         },
-        "knn": {
-            "field": "ml.inference.outmsgvector_.predicted_value",
-            "k": 10,
-            "num_candidates": 100,
-            "query_vector_builder": {
-                "text_embedding": {
-                    "model_id": ".multilingual-e5-small_linux-x86_64",
-                    "model_text": " ".join(strings),
-                }
-            },
-        },
-        "rank": {"rrf": {}},
-        "size": 5,
     }
-    print(query)
+
     return query
 
 
