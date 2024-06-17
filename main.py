@@ -161,8 +161,9 @@ if prompt := st.chat_input("Pregunta algo del gobierno de Salamanca"):
             st.session_state.messages.append({"name": "assistant", "text": response_})
             st.write(str_response)
 
-            breadcrumbs = response_[0]["_source"]["title_migaspan"].upper()
-            st.write(breadcrumbs)
+            if len(response_) > 0:
+                breadcrumbs = response_[0]["_source"]["title_migaspan"].upper()
+                st.write(breadcrumbs)
 
             for idx, response in enumerate(response_):
 
