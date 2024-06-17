@@ -136,7 +136,7 @@ def create_es_query(strings):
         "rank": {"rrf": {}},
         "size": 5,
     }
-
+    print(query)
     return query
 
 
