@@ -12,6 +12,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 PRIVATE_KEY_MIST = os.getenv("PRIVATE_MISTRAL_TOKEN")
+PRIVATE_KEY_GPT = os.getenv("PRIVATE_KEY_GPT")
+OPENAI_ORG = os.getenv("OPENAI_ORG")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -62,14 +64,39 @@ def ask_mistral(prompt):
     return response_.json()
 
 
-def extract_important_info(prompt):
-    preguntaMistralExtractInfo = (
-        f"Extract the important keywords from this question: {prompt}"
+def ask_chatGpt(prompt):
+    url_ = "https://api.openai.com/v1/chat/completions"
+    payload_ = json.dumps(
+        {
+            "model": "gpt-4o",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": f"{prompt}",
+                }
+            ],
+            "temperature": 0,
+            "top_p": 1,
+            "max_tokens": 500,
+            "stream": False,
+        }
     )
-    mistral_response = ask_mistral(preguntaMistralExtractInfo)
-    print(mistral_response)
+    headers = {
+        "Authorization": f"Bearer {PRIVATE_KEY_GPT}",
+        "Content-Type": "application/json",
+        "OpenAI-Organization": f"{OPENAI_ORG}",
+    }
+    print(headers)
+    response_ = requests.post(url_, data=payload_, headers=headers)
+    print(response_.json())
+    return response_.json()
+
+
+def extract_important_info(prompt):
+    preguntaMistralExtractInfo = f"Extract the important keywords from this question: {prompt}. Answer only with the words separated by spaces and nothing else"
+    gpt_response = ask_chatGpt(preguntaMistralExtractInfo)
     # Asumiendo que la respuesta tiene una estructura similar a la original
-    return mistral_response["choices"][0]["message"]["content"]
+    return gpt_response["choices"][0]["message"]["content"]
 
 
 def super_result_algorithm(prompt):
@@ -77,13 +104,13 @@ def super_result_algorithm(prompt):
     keywords = important_info.split()  # Separar las palabras importantes
     results_ = qry_data(keywords)
     string_results_, array_results_ = get_result_data(results_, prompt)
-    prompt_full = f"The user has asked for the following question '{prompt}' and we have found that it can be located in the following sections: {string_results_}. List the locations to the user and tell them that they can navigate through the web.Asked in Spanish"
+    prompt_full = f"The user has asked for the following question '{prompt}' and we have found that it can be located in the following sections: {string_results_}. List the locations to the user and tell them that they can navigate through the web. Important: Only answer in Spanish"
     llm_response = ask_mistral(prompt_full)
     return llm_response["choices"][0]["message"]["content"], array_results_
 
 
 def openurl(textdata):
-    webbrowser.open_new_tab(url)
+    webbrowser.open_new_tab(textdata)
 
 
 def create_es_query_KNN(strings):
