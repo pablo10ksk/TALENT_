@@ -17,7 +17,15 @@ OPENAI_ORG = os.getenv("OPENAI_ORG")
 INDEX_NAME = os.getenv("INDEX_NAME")
 
 if "messages" not in st.session_state:
-    st.session_state.messages = []
+    st.session_state["messages"] = [
+        {
+            "role": "assistant",
+            "content": "Tengo información de la web del ayuntamiento de Salamanca. Pregúntame e intentaré contestarte. Este proyecto proviene del proyecto TALENT, especial gracias a Ana Fermoso y  a los estudiantes Paula, Thimotee, Tomás por el trabajo realizado, con la ayuda de Pablo Díez de UGROUND",
+        }
+    ]
+
+for msg in st.session_state.messages:
+    st.chat_message(msg["role"]).write(msg["content"])
 
 
 def qry_data(keywords):
@@ -179,13 +187,17 @@ def get_description_for_result(result):
 
 # Interfaz de usuario con Streamlit
 if prompt := st.chat_input("Pregunta algo del gobierno de Salamanca"):
+    response = ""
+    st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
     with st.chat_message("assistant"):
         with st.spinner("Ya mismo te contesto..."):
             str_response, response_ = super_result_algorithm(prompt)
 
-            st.session_state.messages.append({"name": "assistant", "text": response_})
+            st.session_state.messages.append(
+                {"role": "assistant", "content": str_response}
+            )
             st.write(str_response)
 
             if len(response_) > 0:
