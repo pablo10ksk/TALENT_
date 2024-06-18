@@ -14,6 +14,7 @@ load_dotenv()
 PRIVATE_KEY_MIST = os.getenv("PRIVATE_MISTRAL_TOKEN")
 PRIVATE_KEY_GPT = os.getenv("PRIVATE_KEY_GPT")
 OPENAI_ORG = os.getenv("OPENAI_ORG")
+INDEX_NAME = os.getenv("INDEX_NAME")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -25,7 +26,7 @@ def qry_data(keywords):
         basic_auth=(os.getenv("ELASTIC_USR"), os.getenv("ELASTIC_PSS")),
     )
     query = create_es_query(keywords)
-    res = obj_es.search(index="talent_ml", body=query)
+    res = obj_es.search(index=INDEX_NAME, body=query)
     return res
 
 
@@ -58,9 +59,8 @@ def ask_mistral(prompt):
         "Authorization": f"Bearer {PRIVATE_KEY_MIST}",
         "Content-Type": "application/json",
     }
-    print(headers)
     response_ = requests.post(url_, data=payload_, headers=headers)
-    print(response_)
+
     return response_.json()
 
 
@@ -86,9 +86,8 @@ def ask_chatGpt(prompt):
         "Content-Type": "application/json",
         "OpenAI-Organization": f"{OPENAI_ORG}",
     }
-    print(headers)
+
     response_ = requests.post(url_, data=payload_, headers=headers)
-    print(response_.json())
     return response_.json()
 
 
@@ -105,7 +104,8 @@ def super_result_algorithm(prompt):
     results_ = qry_data(keywords)
     string_results_, array_results_ = get_result_data(results_, prompt)
     prompt_full = f"The user has asked for the following question '{prompt}' and we have found that it can be located in the following sections: {string_results_}. List the locations to the user and tell them that they can navigate through the web. Important: Only answer in Spanish"
-    llm_response = ask_mistral(prompt_full)
+    # llm_response = ask_mistral(prompt_full)
+    llm_response = ask_chatGpt(prompt_full)
     return llm_response["choices"][0]["message"]["content"], array_results_
 
 
@@ -184,7 +184,7 @@ if prompt := st.chat_input("Pregunta algo del gobierno de Salamanca"):
     with st.chat_message("assistant"):
         with st.spinner("Ya mismo te contesto..."):
             str_response, response_ = super_result_algorithm(prompt)
-            print(response_)
+
             st.session_state.messages.append({"name": "assistant", "text": response_})
             st.write(str_response)
 
